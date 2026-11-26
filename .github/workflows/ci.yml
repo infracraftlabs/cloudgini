@@ -1,0 +1,48 @@
+name: ci
+on:
+  push: { branches: [main] }
+  pull_request:
+permissions:
+  contents: read
+jobs:
+  backend:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env: { POSTGRES_USER: cloudgini, POSTGRES_PASSWORD: ci-only, POSTGRES_DB: cloudgini }
+        ports: ["5432:5432"]
+        options: --health-cmd "pg_isready -U cloudgini" --health-interval 3s --health-retries 20
+    defaults: { run: { working-directory: backend } }
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: { python-version: "3.12" }
+      - run: pip install -e ".[dev]"
+      - run: pytest -q
+      - name: Migrations and tests on PostgreSQL
+        env:
+          CLOUDGINI_DATABASE_URL: postgresql+psycopg://cloudgini:ci-only@localhost:5432/cloudgini
+          CLOUDGINI_TEST_DATABASE_URL: postgresql+psycopg://cloudgini:ci-only@localhost:5432/cloudgini
+        run: |
+          alembic upgrade head
+          pytest -q
+  frontend:
+    runs-on: ubuntu-latest
+    defaults: { run: { working-directory: frontend } }
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: "22", cache: npm, cache-dependency-path: frontend/package-lock.json }
+      - run: npm ci
+      - run: npm run typecheck
+      - run: npm run build
+  terraform:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: hashicorp/setup-terraform@v3
+      - run: |
+          for d in infra/terraform/demo infra/terraform/cloudrun; do
+            terraform -chdir=$d fmt -check && terraform -chdir=$d init -backend=false -input=false && terraform -chdir=$d validate
+          done

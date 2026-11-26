@@ -1,0 +1,16 @@
+.env
+.env.*
+!.env.example
+*.db
+.venv/
+__pycache__/
+.pytest_cache/
+node_modules/
+.next/
+*.tfstate
+*.tfstate.*
+.terraform/
+*.tfvars
+!*.tfvars.example
+.claude/
+*.egg-info/

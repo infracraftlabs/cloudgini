@@ -1,0 +1,5 @@
+project_id         = "your-cloudgini-host-project"
+target_project_ids = ["your-cloudgini-demo-project"]
+# remediation_project_ids = ["your-cloudgini-demo-project"]
+backend_image  = "europe-west1-docker.pkg.dev/your-cloudgini-host-project/cloudgini/backend:TAG"
+frontend_image = "europe-west1-docker.pkg.dev/your-cloudgini-host-project/cloudgini/frontend:TAG"
